@@ -1,0 +1,26 @@
+body {
+    background-color: #18453B;
+    color: green;
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+h1 {
+    color: black;
+}
+
+h2 {
+    color: black;
+}
+
+.panel {
+    background-color: #FFFFFF;
+    border: 5px black;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.container {
+    display: flex;
+    gap: 20px;
+}
