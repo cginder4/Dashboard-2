@@ -1,6 +1,6 @@
 body {
     background-color: #18453B;
-    color: green;
+    color: #18453B;
     font-family: Arial, sans-serif;
     margin: 20px;
 }
@@ -15,7 +15,7 @@ h2 {
 
 .panel {
     background-color: #FFFFFF;
-    border: 5px black;
+    border: 5px solid;
     padding: 20px;
     margin-bottom: 20px;
 }

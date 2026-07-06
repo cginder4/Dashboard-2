@@ -1,7 +1,8 @@
-console.log("Hello from JavaScript!");
-let cpuTemp = 42;
-console.log(cpuTemp);
-let status ="online";
-console.log(status);
-let cpu = document.getElementById("cpu-temp");
-cpu.textContent= "CPU Temperature: 42 C";
+
+function updateClock() {
+    console.log("updating");
+    let now = new Date();
+    let clock = document.getElementById("clock");
+    clock.textContent = "Time: "+ now.toLocaleTimeString();
+}
+setInterval(updateClock, 1000);
