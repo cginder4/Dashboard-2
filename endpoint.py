@@ -2,12 +2,12 @@ from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-@app.route("/system")
-def system():
+@app.route("/server")
+def server():
     return jsonify({
-        "cpu": 42,
-        "ram": 61,
-        "online": True
+        "cpu": 45,
+        "gpu": 65,
+        "jellyfin_status": "Running"
     })
 
 if __name__ == "__main__":
