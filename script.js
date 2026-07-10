@@ -14,8 +14,8 @@ async function updateServer() {
     let cpuTemp = document.getElementById("cpu-temp");
     let gpuTemp = document.getElementById("gpu-temp");
     let jellyfinStatus = document.getElementById("jellyfin_status");
-    cpuTemp.textContent = "CPU: " + data.cpu + "°C";
-    gpuTemp.textContent = "GPU: " + data.gpu + "°C";
+    cpuTemp.textContent = "CPU: " + data.cpu + "%";
+    gpuTemp.textContent = "RAM: " + data.RAM + "%";
     jellyfinStatus.textContent = "Jellyfin: " + data.jellyfin_status;
 }
 setInterval(updateServer, 1000);
