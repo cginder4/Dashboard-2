@@ -12,10 +12,10 @@ async function updateServer() {
     let data = await response.json();
     console.log(data);
     let cpuTemp = document.getElementById("cpu-temp");
-    let gpuTemp = document.getElementById("gpu-temp");
+    let RAM = document.getElementById("RAM");
     let jellyfinStatus = document.getElementById("jellyfin_status");
     cpuTemp.textContent = "CPU: " + data.cpu + "%";
-    gpuTemp.textContent = "RAM: " + data.RAM + "%";
+    RAM.textContent = "RAM: " + data.ram + "%";
     jellyfinStatus.textContent = "Jellyfin: " + data.jellyfin_status;
 }
 setInterval(updateServer, 1000);
