@@ -1,93 +1,153 @@
 :root {
-    --primary: #18453B;
-    --primary-dark: #12392f;
-    --surface: #FFFFFF;
-    --surface-muted: #F6F8F7;
-    --text: #18453B;
-    --text-light: #F4F8F6;
-    --border: rgba(24, 69, 59, 0.12);
-    --shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  --primary: #18453B;
+  --primary-dark: #12392f;
+  --surface: #FFFFFF;
+  --surface-muted: #F6F8F7;
+  --text: #18453B;
+  --text-light: #F4F8F6;
+  --border: rgba(24, 69, 59, 0.12);
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
 }
 
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body {
-    background: linear-gradient(135deg, var(--primary) 0%, #1f5f4c 100%);
-    color: var(--text-light);
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 24px;
-    min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary) 0%, #1f5f4c 100%);
+  color: var(--text-light);
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 24px;
+  min-height: 100vh;
 }
 
 h1, h2 {
-    color: #18453B;
-    margin: 0 0 12px;
+  color: #18453B;
+  margin: 0 0 12px;
 }
 
 h1 {
-    font-size: 2rem;
-    letter-spacing: 0.02em;
+  font-size: 2rem;
+  letter-spacing: 0.02em;
 }
 
 h2 {
-    font-size: 1.15rem;
-    font-weight: 600;
+  font-size: 1.15rem;
+  font-weight: 600;
 }
 
 .panel {
-    background-color: var(--surface);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 20px;
-    box-shadow: var(--shadow);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background-color: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .panel:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
+}
+
+.header-panel {
+  margin-bottom: 24px;
 }
 
 .creatine-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 #creatine-feedback,
-#streak-count {
-    margin: 0;
-    color: var(--text);
+#streak {
+  margin: 0;
+  color: var(--text);
 }
 
-#creatine-taken-btn {
-    align-self: flex-start;
-    border: none;
-    border-radius: 999px;
-    background: var(--primary);
-    color: var(--text-light);
-    cursor: pointer;
-    font-weight: 600;
-    padding: 10px 16px;
-    transition: background 0.2s ease;
+button,
+select,
+input {
+  font: inherit;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  padding: 8px 10px;
 }
 
-#creatine-taken-btn:hover {
-    background: var(--primary-dark);
+button {
+  background: var(--primary);
+  color: var(--text-light);
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
 }
 
-#creatine-taken-btn:disabled {
-    cursor: not-allowed;
-    opacity: 0.75;
+button:hover {
+  background: var(--primary-dark);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
 }
 
 .container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 24px;
-    align-items: start;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.tracker-form {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.summary-label {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #56766f;
+}
+
+.summary-value {
+  margin: 0;
+  font-weight: 700;
+}
+
+#weight-chart {
+  width: 100%;
+  height: 160px;
+  margin: 8px 0;
+  background: var(--surface-muted);
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.history-list li {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface-muted);
+  font-size: 0.95rem;
 }

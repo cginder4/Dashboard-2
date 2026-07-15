@@ -1,38 +1,104 @@
 <!DOCTYPE html>
-
 <html>
-
 <head>
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-    <div class="panel" name="header">
-        <h1>My Dashboard</h1>
-    </div>
+  <div class="panel header-panel">
+    <h1>My Dashboard</h1>
+  </div>
 
-<div class="container">
+  <div class="container">
     <div class="panel creatine-panel" name="creatine_tracker">
-        <h2>Creatine Tracker</h2>
-        <p id="creatine-feedback">Creatine not logged yet</p>
-        <p id="streak">Current streak: 0 days</p>
-        <button id="creatine-taken-button" type="button">Creatine Taken</button>
+      <h2>Creatine Tracker</h2>
+      <p id="creatine-feedback">Creatine not logged yet</p>
+      <p id="streak">Current streak: 0 days</p>
+      <button id="creatine-taken-button" type="button">Creatine Taken</button>
     </div>
+
     <div class="panel" name="server_stats">
-        <h2>Server Stats</h2>
-        <p id="cpu-temp">CPU: </p>
-        <p id="RAM">RAM: </p>
-        <p id="jellyfin_status">Jellyfin: </p>
+      <h2>Server Stats</h2>
+      <p id="cpu-temp">CPU: </p>
+      <p id="RAM">RAM: </p>
+      <p id="jellyfin_status">Jellyfin: </p>
     </div>
+
     <div class="panel" name="clock">
-        <h2>Clock</h2>
-        <p id="clock">Time: </p>
+      <h2>Clock</h2>
+      <p id="clock">Time: </p>
     </div>
-</div>
 
-<script src="script.js"></script>
+    <div class="panel weight-panel" name="bodyweight_tracker">
+      <h2>Bodyweight Tracker</h2>
+      <form id="weight-form" class="tracker-form">
+        <label for="weight-date">Date</label>
+        <input id="weight-date" type="date" required>
+        <label for="weight-value">Weight (lb)</label>
+        <input id="weight-value" type="number" step="0.1" min="0" required>
+        <button type="submit">Log weight</button>
+      </form>
 
+      <div class="summary-row">
+        <div>
+          <p class="summary-label">Current</p>
+          <p id="weight-current" class="summary-value">—</p>
+        </div>
+        <div>
+          <p class="summary-label">7-day change</p>
+          <p id="weight-change" class="summary-value">—</p>
+        </div>
+      </div>
+
+      <svg id="weight-chart" viewBox="0 0 320 140" role="img" aria-label="Bodyweight chart"></svg>
+      <ul id="weight-history" class="history-list"></ul>
+    </div>
+
+    <div class="panel workout-panel" name="workout_tracker">
+      <h2>Workout Tracker</h2>
+      <form id="workout-form" class="tracker-form">
+        <label for="workout-date">Date</label>
+        <input id="workout-date" type="date" required>
+
+        <label for="muscle-group">Muscle group</label>
+        <select id="muscle-group">
+          <option value="Chest">Chest</option>
+          <option value="Back">Back</option>
+          <option value="Legs">Legs</option>
+          <option value="Shoulders">Shoulders</option>
+          <option value="Arms">Arms</option>
+          <option value="Core">Core</option>
+        </select>
+
+        <label for="exercise-name">Exercise</label>
+        <select id="exercise-name"></select>
+
+        <label for="sets">Sets</label>
+        <input id="sets" type="number" min="1" value="3" required>
+
+        <label for="reps">Reps</label>
+        <input id="reps" type="number" min="1" value="10" required>
+
+        <button type="submit">Save workout</button>
+      </form>
+
+      <div class="summary-row">
+        <div>
+          <p class="summary-label">Last workout</p>
+          <p id="workout-last" class="summary-value">—</p>
+        </div>
+        <div>
+          <p class="summary-label">Recent focus</p>
+          <p id="workout-focus" class="summary-value">—</p>
+        </div>
+      </div>
+
+      <ul id="workout-history" class="history-list"></ul>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
-
 </html>
