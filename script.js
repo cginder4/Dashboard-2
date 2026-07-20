@@ -102,16 +102,9 @@ if (button) {
 updateTrackerUI(loadTrackerState());
 
 const weightStorageKey = "bodyweight-history";
-const workoutStorageKey = "workout-history";
-
-const exerciseOptions = {
-  Chest: ["Bench Press", "Incline Dumbbell Press", "Push-Ups", "Dips"],
-  Back: ["Pull-Ups", "Rows", "Lat Pulldown", "Deadlift"],
-  Legs: ["Squat", "Romanian Deadlift", "Lunges", "Leg Press"],
-  Shoulders: ["Overhead Press", "Lateral Raise", "Front Raise", "Shrugs"],
-  Arms: ["Biceps Curl", "Hammer Curl", "Triceps Extension", "Close-Grip Push-Up"],
-  Core: ["Plank", "Crunches", "Hanging Knee Raise", "Russian Twist"]
-};
+const workoutStorageKey = "detailed-workout-days";
+let selectedWorkoutDayId = null;
+const muscleGroupOptions = ["Chest", "Back", "Legs", "Shoulders", "Arms", "Core"];
 
 function loadWeightEntries() {
   const stored = localStorage.getItem(weightStorageKey);
@@ -124,23 +117,8 @@ function loadWeightEntries() {
   }
 }
 
-function loadWorkoutEntries() {
-  const stored = localStorage.getItem(workoutStorageKey);
-  if (!stored) return [];
-  try {
-    return JSON.parse(stored);
-  } catch (error) {
-    console.warn("Could not parse workout data", error);
-    return [];
-  }
-}
-
 function saveWeightEntries(entries) {
   localStorage.setItem(weightStorageKey, JSON.stringify(entries));
-}
-
-function saveWorkoutEntries(entries) {
-  localStorage.setItem(workoutStorageKey, JSON.stringify(entries));
 }
 
 function renderWeightChart(entries) {
@@ -263,81 +241,454 @@ function setupWeightTracker() {
   });
 }
 
-function populateExerciseOptions(group) {
-  const select = document.getElementById("exercise-name");
-  if (!select) return;
-  select.innerHTML = (exerciseOptions[group] || []).map((exercise) => `<option value="${exercise}">${exercise}</option>`).join("");
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
-function renderWorkoutHistory(entries) {
-  const list = document.getElementById("workout-history");
-  const lastWorkout = document.getElementById("workout-last");
-  const focus = document.getElementById("workout-focus");
-  if (!list) return;
+function loadWorkoutDays() {
+  const stored = localStorage.getItem(workoutStorageKey);
+  if (!stored) return [];
+  try {
+    return JSON.parse(stored).map(normalizeWorkoutDay);
+  } catch (error) {
+    console.warn("Could not parse workout data", error);
+    return [];
+  }
+}
 
-  if (entries.length === 0) {
-    list.innerHTML = "<li>No workouts logged yet.</li>";
-    if (lastWorkout) lastWorkout.textContent = "—";
-    if (focus) focus.textContent = "—";
+function saveWorkoutDays(days) {
+  localStorage.setItem(workoutStorageKey, JSON.stringify(days.map(normalizeWorkoutDay)));
+}
+
+function createWorkoutDay(title, date) {
+  return {
+    id: `day-${Date.now()}`,
+    title: title.trim() || `Workout ${date}`,
+    date,
+    muscleGroups: [],
+    savedAt: null
+  };
+}
+
+function getSortedWorkoutDays(days) {
+  return [...days].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function getWorkoutDaySummary(day) {
+  const exerciseCount = (day.muscleGroups || []).reduce((total, group) => total + (group.exercises || []).length, 0);
+  const entryCount = (day.muscleGroups || []).reduce((total, group) => total + (group.exercises || []).reduce((groupTotal, exercise) => groupTotal + ((exercise.entries || []).length), 0), 0);
+  const status = day.savedAt ? "Saved" : "Draft";
+  return { exerciseCount, entryCount, status };
+}
+
+function renderWorkoutSummary(day) {
+  const summary = document.getElementById("workout-day-summary");
+  const saveStatus = document.getElementById("workout-save-status");
+  if (!summary) return;
+
+  if (!day) {
+    summary.innerHTML = "";
+    if (saveStatus) saveStatus.textContent = "";
     return;
   }
 
-  const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
-  list.innerHTML = sorted.slice(-6).reverse().map((entry) => `<li>${entry.date} • ${entry.muscleGroup} • ${entry.exercise} • ${entry.sets}x${entry.reps}</li>`).join("");
+  const { exerciseCount, entryCount, status } = getWorkoutDaySummary(day);
+  summary.innerHTML = `
+    <strong>${escapeHtml(day.title)}</strong><br>
+    <span>${day.date} • ${status} • ${day.muscleGroups.length} muscle group${day.muscleGroups.length === 1 ? "" : "s"} • ${exerciseCount} exercise${exerciseCount === 1 ? "" : "s"} • ${entryCount} entry${entryCount === 1 ? "" : "s"}</span>
+  `;
 
-  if (lastWorkout) {
-    const latest = sorted[sorted.length - 1];
-    lastWorkout.textContent = `${latest.exercise} • ${latest.sets}x${latest.reps}`;
-  }
-
-  if (focus) {
-    const counts = sorted.reduce((acc, entry) => {
-      acc[entry.muscleGroup] = (acc[entry.muscleGroup] || 0) + 1;
-      return acc;
-    }, {});
-    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-    focus.textContent = top ? top[0] : "—";
+  if (saveStatus) {
+    saveStatus.textContent = day.savedAt ? `Saved ${new Date(day.savedAt).toLocaleString()}` : "Unsaved draft. Use Save workout day when you are finished.";
   }
 }
 
+function renderWorkoutHistory(days) {
+  const list = document.getElementById("workout-history");
+  const count = document.getElementById("workout-count");
+  if (!list) return;
+
+  if (count) {
+    count.textContent = String(days.length);
+  }
+
+  if (days.length === 0) {
+    list.innerHTML = "<li>No workout days yet.</li>";
+    return;
+  }
+
+  const sorted = getSortedWorkoutDays(days);
+  list.innerHTML = sorted.map((day) => {
+    const { exerciseCount, entryCount, status } = getWorkoutDaySummary(day);
+    return `
+      <button type="button" class="workout-day-select ${day.id === selectedWorkoutDayId ? "active" : ""}" data-day-id="${day.id}">
+        <strong>${escapeHtml(day.title)}</strong><br>
+        <span>${day.date} • ${status} • ${exerciseCount} exercise${exerciseCount === 1 ? "" : "s"} • ${entryCount} entry${entryCount === 1 ? "" : "s"}</span>
+      </button>
+    `;
+  }).join("");
+}
+
+function getExerciseOptionsForGroup(groupName) {
+  const optionsByGroup = {
+    Chest: ["Bench Press", "Incline Dumbbell Press", "Push-Ups", "Dips"],
+    Back: ["Lat Pulldown", "Seated Row", "Chest-Supported Row", "Deadlift"],
+    Legs: ["Squat", "Romanian Deadlift", "Leg Press", "Lunge"],
+    Shoulders: ["Overhead Press", "Lateral Raise", "Front Raise", "Shrugs"],
+    Arms: ["Biceps Curl", "Hammer Curl", "Triceps Extension", "Skull Crusher"],
+    Core: ["Plank", "Crunches", "Hanging Knee Raise", "Russian Twist"]
+  };
+
+  return optionsByGroup[groupName] || ["Custom Exercise"];
+}
+
+function normalizeWorkoutDay(day) {
+  if (!day || !Array.isArray(day.muscleGroups)) return day;
+
+  day.muscleGroups.forEach((group) => {
+    group.exercises = (group.exercises || []).map((exercise) => {
+      if (Array.isArray(exercise.entries)) {
+        return exercise;
+      }
+
+      if (Array.isArray(exercise.sets)) {
+        return {
+          ...exercise,
+          entries: exercise.sets.map((set) => ({
+            sets: set.sets || 1,
+            reps: set.reps || 0,
+            weight: set.weight || 0,
+            notes: set.notes || ""
+          }))
+        };
+      }
+
+      return {
+        ...exercise,
+        entries: []
+      };
+    });
+  });
+
+  return day;
+}
+
+function renderWorkoutBuilder(day) {
+  const builder = document.getElementById("workout-day-builder");
+  if (!builder) return;
+
+  if (!day) {
+    builder.innerHTML = "<p class='empty-text'>Create a workout day to start tracking exercises and sets.</p>";
+    renderWorkoutSummary(null);
+    return;
+  }
+
+  const muscleGroupOptionsMarkup = muscleGroupOptions.map((option) => `<option value="${option}">${option}</option>`).join("");
+
+  builder.innerHTML = `
+    <div class="workout-builder">
+      <div class="selected-day-card">
+        <div class="inline-fields">
+          <label>
+            Day name
+            <input class="day-title-input" data-day-id="${day.id}" type="text" value="${escapeHtml(day.title)}">
+          </label>
+          <label>
+            Date
+            <input class="day-date-input" data-day-id="${day.id}" type="date" value="${day.date}">
+          </label>
+        </div>
+        <div class="exercise-adder">
+          <select id="muscle-group-selector">${muscleGroupOptionsMarkup}</select>
+          <button id="add-muscle-group-btn" type="button">Add muscle group</button>
+          <button id="save-workout-day-btn" type="button">Save workout day</button>
+        </div>
+      </div>
+
+      <div class="muscle-group-list">
+        ${day.muscleGroups.length === 0 ? '<p class="empty-text">Add a muscle group to begin building this day.</p>' : day.muscleGroups.map((group, groupIndex) => `
+          <div class="muscle-group-card">
+            <div class="muscle-group-header">
+              <h3>${escapeHtml(group.name)}</h3>
+              <button class="remove-muscle-group-btn" data-group-index="${groupIndex}" type="button">Remove</button>
+            </div>
+
+            <div class="exercise-adder">
+              <select class="exercise-option-select" data-group-index="${groupIndex}">
+                ${getExerciseOptionsForGroup(group.name).map((option) => `<option value="${option}">${option}</option>`).join("")}
+              </select>
+              <button class="add-exercise-btn" data-group-index="${groupIndex}" type="button">Add exercise</button>
+            </div>
+
+            <div class="exercise-list">
+              ${group.exercises.length === 0 ? '<p class="empty-text">No exercises logged yet.</p>' : group.exercises.map((exercise, exerciseIndex) => `
+                <div class="exercise-card">
+                  <div class="exercise-header">
+                    <select class="exercise-name-select" data-group-index="${groupIndex}" data-exercise-index="${exerciseIndex}">
+                      ${getExerciseOptionsForGroup(group.name).map((option) => `<option value="${option}" ${option === exercise.name ? "selected" : ""}>${option}</option>`).join("")}
+                    </select>
+                    <button class="add-set-entry-btn" data-group-index="${groupIndex}" data-exercise-index="${exerciseIndex}" type="button">Add entry</button>
+                    <button class="remove-exercise-btn" data-group-index="${groupIndex}" data-exercise-index="${exerciseIndex}" type="button">Remove</button>
+                  </div>
+
+                  <div class="set-list">
+                    ${(exercise.entries || []).length === 0 ? '<p class="empty-text">No entries logged yet.</p>' : (exercise.entries || []).map((entry, entryIndex) => `
+                      <div class="set-row">
+                        <input class="set-sets-input" data-group-index="${groupIndex}" data-exercise-index="${exerciseIndex}" data-entry-index="${entryIndex}" type="number" min="1" value="${entry.sets || 3}">
+                        <input class="set-reps-input" data-group-index="${groupIndex}" data-exercise-index="${exerciseIndex}" data-entry-index="${entryIndex}" type="number" min="1" value="${entry.reps || 10}">
+                        <input class="set-weight-input" data-group-index="${groupIndex}" data-exercise-index="${exerciseIndex}" data-entry-index="${entryIndex}" type="number" step="0.25" value="${entry.weight || 0}">
+                        <input class="set-notes-input" data-group-index="${groupIndex}" data-exercise-index="${exerciseIndex}" data-entry-index="${entryIndex}" type="text" value="${escapeHtml(entry.notes || "")}" placeholder="Notes">
+                        <button class="remove-set-entry-btn" data-group-index="${groupIndex}" data-exercise-index="${exerciseIndex}" data-entry-index="${entryIndex}" type="button">Remove</button>
+                      </div>
+                    `).join("")}
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+  renderWorkoutSummary(day);
+}
+
+function renderWorkoutTracker() {
+  const days = getSortedWorkoutDays(loadWorkoutDays());
+  if (!selectedWorkoutDayId && days.length > 0) {
+    selectedWorkoutDayId = days[0].id;
+  }
+  const selectedDay = days.find((day) => day.id === selectedWorkoutDayId) || null;
+  renderWorkoutHistory(days);
+  renderWorkoutBuilder(selectedDay);
+}
+
+function updateWorkoutDay(dayId, updater) {
+  const days = loadWorkoutDays();
+  const day = days.find((entry) => entry.id === dayId);
+  if (!day) return;
+  updater(day);
+  saveWorkoutDays(days);
+  renderWorkoutTracker();
+}
+
+function createWorkoutDayFromForm() {
+  const titleInput = document.getElementById("workout-day-title");
+  const dateInput = document.getElementById("workout-day-date");
+  if (!titleInput || !dateInput) return;
+
+  const newDay = createWorkoutDay(titleInput.value, dateInput.value || formatDate(new Date()));
+  const days = loadWorkoutDays();
+  days.push(newDay);
+  saveWorkoutDays(days);
+  selectedWorkoutDayId = newDay.id;
+  titleInput.value = "";
+  dateInput.value = formatDate(new Date());
+  renderWorkoutTracker();
+}
+
+function saveWorkoutDay() {
+  if (!selectedWorkoutDayId) return;
+  const days = loadWorkoutDays();
+  const day = days.find((entry) => entry.id === selectedWorkoutDayId);
+  if (!day) return;
+
+  day.savedAt = new Date().toISOString();
+  saveWorkoutDays(days);
+  renderWorkoutTracker();
+}
+
+function addMuscleGroupToSelectedDay() {
+  const selector = document.getElementById("muscle-group-selector");
+  if (!selector || !selectedWorkoutDayId) return;
+
+  updateWorkoutDay(selectedWorkoutDayId, (day) => {
+    day.muscleGroups.push({
+      name: selector.value,
+      exercises: []
+    });
+  });
+}
+
+function addExerciseToGroup(groupIndex, exerciseName) {
+  if (!selectedWorkoutDayId) return;
+  updateWorkoutDay(selectedWorkoutDayId, (day) => {
+    const group = day.muscleGroups[groupIndex];
+    if (!group) return;
+    const trimmedName = exerciseName.trim();
+    if (trimmedName) {
+      group.exercises.push({ name: trimmedName, entries: [] });
+    }
+  });
+}
+
+function addSetEntryToExercise(groupIndex, exerciseIndex) {
+  if (!selectedWorkoutDayId) return;
+  updateWorkoutDay(selectedWorkoutDayId, (day) => {
+    const group = day.muscleGroups[groupIndex];
+    const exercise = group && group.exercises[exerciseIndex];
+    if (!exercise) return;
+    exercise.entries = exercise.entries || [];
+    exercise.entries.push({ sets: 3, reps: 10, weight: 0, notes: "" });
+  });
+}
+
+function removeSetEntryFromExercise(groupIndex, exerciseIndex, entryIndex) {
+  if (!selectedWorkoutDayId) return;
+  updateWorkoutDay(selectedWorkoutDayId, (day) => {
+    const group = day.muscleGroups[groupIndex];
+    const exercise = group && group.exercises[exerciseIndex];
+    if (!exercise) return;
+    exercise.entries = exercise.entries || [];
+    exercise.entries.splice(entryIndex, 1);
+  });
+}
+
+function removeExerciseFromGroup(groupIndex, exerciseIndex) {
+  if (!selectedWorkoutDayId) return;
+  updateWorkoutDay(selectedWorkoutDayId, (day) => {
+    const group = day.muscleGroups[groupIndex];
+    if (!group) return;
+    group.exercises.splice(exerciseIndex, 1);
+  });
+}
+
+function removeMuscleGroup(groupIndex) {
+  if (!selectedWorkoutDayId) return;
+  updateWorkoutDay(selectedWorkoutDayId, (day) => {
+    day.muscleGroups.splice(groupIndex, 1);
+  });
+}
+
+function updateDayTitle(dayId, value) {
+  updateWorkoutDay(dayId, (day) => {
+    day.title = value;
+  });
+}
+
+function updateDayDate(dayId, value) {
+  updateWorkoutDay(dayId, (day) => {
+    day.date = value;
+  });
+}
+
+function updateExerciseName(dayId, groupIndex, exerciseIndex, value) {
+  updateWorkoutDay(dayId, (day) => {
+    const group = day.muscleGroups[groupIndex];
+    const exercise = group && group.exercises[exerciseIndex];
+    if (exercise) {
+      exercise.name = value;
+    }
+  });
+}
+
+function updateEntryField(dayId, groupIndex, exerciseIndex, entryIndex, field, value) {
+  updateWorkoutDay(dayId, (day) => {
+    const group = day.muscleGroups[groupIndex];
+    const exercise = group && group.exercises[exerciseIndex];
+    const entry = exercise && exercise.entries && exercise.entries[entryIndex];
+    if (entry) {
+      entry[field] = field === "sets" || field === "reps" || field === "weight" ? Number(value) : value;
+    }
+  });
+}
+
 function setupWorkoutTracker() {
-  const form = document.getElementById("workout-form");
-  const groupSelect = document.getElementById("muscle-group");
-  const dateInput = document.getElementById("workout-date");
-  const setsInput = document.getElementById("sets");
-  const repsInput = document.getElementById("reps");
-  if (!form || !groupSelect || !dateInput || !setsInput || !repsInput) return;
+  const createButton = document.getElementById("create-workout-day-btn");
+  const titleInput = document.getElementById("workout-day-title");
+  const dateInput = document.getElementById("workout-day-date");
+  if (!createButton || !titleInput || !dateInput) return;
 
   dateInput.value = formatDate(new Date());
-  populateExerciseOptions(groupSelect.value);
-  renderWorkoutHistory(loadWorkoutEntries());
+  renderWorkoutTracker();
 
-  groupSelect.addEventListener("change", () => populateExerciseOptions(groupSelect.value));
+  createButton.addEventListener("click", createWorkoutDayFromForm);
 
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
+  document.getElementById("workout-day-builder").addEventListener("click", (event) => {
+    const target = event.target;
+    if (target.id === "add-muscle-group-btn") {
+      addMuscleGroupToSelectedDay();
+      return;
+    }
 
-    const exerciseSelect = document.getElementById("exercise-name");
-    const entry = {
-      date: dateInput.value,
-      muscleGroup: groupSelect.value,
-      exercise: exerciseSelect.value,
-      sets: Number(setsInput.value),
-      reps: Number(repsInput.value)
-    };
+    if (target.id === "save-workout-day-btn") {
+      saveWorkoutDay();
+      return;
+    }
 
-    const existing = loadWorkoutEntries();
-    const updated = [...existing, entry];
-    updated.sort((a, b) => a.date.localeCompare(b.date));
-    saveWorkoutEntries(updated);
+    if (target.classList.contains("workout-day-select")) {
+      selectedWorkoutDayId = target.dataset.dayId;
+      renderWorkoutTracker();
+      return;
+    }
 
-    renderWorkoutHistory(updated);
+    if (target.classList.contains("add-exercise-btn")) {
+      const groupIndex = Number(target.dataset.groupIndex);
+      const select = target.closest(".exercise-adder").querySelector(".exercise-option-select");
+      addExerciseToGroup(groupIndex, select ? select.value : "");
+      return;
+    }
 
-    form.reset();
-    dateInput.value = formatDate(new Date());
-    setsInput.value = 3;
-    repsInput.value = 10;
-    populateExerciseOptions(groupSelect.value);
+    if (target.classList.contains("add-set-entry-btn")) {
+      addSetEntryToExercise(Number(target.dataset.groupIndex), Number(target.dataset.exerciseIndex));
+      return;
+    }
+
+    if (target.classList.contains("remove-set-entry-btn")) {
+      removeSetEntryFromExercise(Number(target.dataset.groupIndex), Number(target.dataset.exerciseIndex), Number(target.dataset.entryIndex));
+      return;
+    }
+
+    if (target.classList.contains("remove-exercise-btn")) {
+      removeExerciseFromGroup(Number(target.dataset.groupIndex), Number(target.dataset.exerciseIndex));
+      return;
+    }
+
+    if (target.classList.contains("remove-muscle-group-btn")) {
+      removeMuscleGroup(Number(target.dataset.groupIndex));
+    }
+  });
+
+  document.getElementById("workout-day-builder").addEventListener("change", (event) => {
+    const target = event.target;
+    if (target.classList.contains("day-title-input")) {
+      updateDayTitle(target.dataset.dayId, target.value);
+      return;
+    }
+
+    if (target.classList.contains("day-date-input")) {
+      updateDayDate(target.dataset.dayId, target.value);
+      return;
+    }
+
+    if (target.classList.contains("exercise-name-select") && target.dataset.exerciseIndex !== undefined) {
+      updateExerciseName(selectedWorkoutDayId, Number(target.dataset.groupIndex), Number(target.dataset.exerciseIndex), target.value);
+      return;
+    }
+
+    if (target.classList.contains("set-sets-input")) {
+      updateEntryField(selectedWorkoutDayId, Number(target.dataset.groupIndex), Number(target.dataset.exerciseIndex), Number(target.dataset.entryIndex), "sets", target.value);
+      return;
+    }
+
+    if (target.classList.contains("set-reps-input")) {
+      updateEntryField(selectedWorkoutDayId, Number(target.dataset.groupIndex), Number(target.dataset.exerciseIndex), Number(target.dataset.entryIndex), "reps", target.value);
+      return;
+    }
+
+    if (target.classList.contains("set-weight-input")) {
+      updateEntryField(selectedWorkoutDayId, Number(target.dataset.groupIndex), Number(target.dataset.exerciseIndex), Number(target.dataset.entryIndex), "weight", target.value);
+      return;
+    }
+
+    if (target.classList.contains("set-notes-input")) {
+      updateEntryField(selectedWorkoutDayId, Number(target.dataset.groupIndex), Number(target.dataset.exerciseIndex), Number(target.dataset.entryIndex), "notes", target.value);
+    }
   });
 }
 

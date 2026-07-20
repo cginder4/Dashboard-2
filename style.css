@@ -145,9 +145,113 @@ button:disabled {
   gap: 8px;
 }
 
-.history-list li {
+.history-list li,
+.workout-day-select,
+.muscle-group-card,
+.exercise-card,
+.set-row {
   padding: 8px 10px;
   border-radius: 10px;
   background: var(--surface-muted);
   font-size: 0.95rem;
+}
+
+.workout-day-summary {
+  margin: 10px 0 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #f8fbfa;
+}
+
+.workout-day-select {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.workout-day-select.active {
+  border-color: var(--primary);
+  background: #e9f2ef;
+}
+
+.workout-builder {
+  display: grid;
+  gap: 10px;
+}
+
+.selected-day-card,
+.muscle-group-card,
+.exercise-card {
+  border: 1px solid var(--border);
+  background: #fdfefe;
+}
+
+.selected-day-card {
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.inline-fields {
+  display: grid;
+  gap: 8px;
+}
+
+.muscle-group-card {
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.muscle-group-header,
+.exercise-header,
+.set-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.exercise-adder {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.exercise-list {
+  display: grid;
+  gap: 8px;
+}
+
+.exercise-card {
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.set-list {
+  display: grid;
+  gap: 6px;
+}
+
+.set-row {
+  background: #f8fbfa;
+  gap: 6px;
+}
+
+.set-row input {
+  flex: 1 1 90px;
+  min-width: 0;
+}
+
+.set-row .set-notes-input {
+  flex: 2 1 140px;
+}
+
+.empty-text {
+  margin: 0;
+  color: #56766f;
+  font-size: 0.9rem;
 }

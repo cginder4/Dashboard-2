@@ -58,44 +58,26 @@
 
     <div class="panel workout-panel" name="workout_tracker">
       <h2>Workout Tracker</h2>
-      <form id="workout-form" class="tracker-form">
-        <label for="workout-date">Date</label>
-        <input id="workout-date" type="date" required>
+      <div class="tracker-form">
+        <label for="workout-day-title">Workout day name</label>
+        <input id="workout-day-title" type="text" placeholder="Back day">
+        <label for="workout-day-date">Date</label>
+        <input id="workout-day-date" type="date" required>
+        <button id="create-workout-day-btn" type="button">Create workout day</button>
+      </div>
 
-        <label for="muscle-group">Muscle group</label>
-        <select id="muscle-group">
-          <option value="Chest">Chest</option>
-          <option value="Back">Back</option>
-          <option value="Legs">Legs</option>
-          <option value="Shoulders">Shoulders</option>
-          <option value="Arms">Arms</option>
-          <option value="Core">Core</option>
-        </select>
-
-        <label for="exercise-name">Exercise</label>
-        <select id="exercise-name"></select>
-
-        <label for="sets">Sets</label>
-        <input id="sets" type="number" min="1" value="3" required>
-
-        <label for="reps">Reps</label>
-        <input id="reps" type="number" min="1" value="10" required>
-
-        <button type="submit">Save workout</button>
-      </form>
+      <div id="workout-day-builder"></div>
+      <div id="workout-day-summary" class="workout-day-summary"></div>
+      <p id="workout-save-status" class="empty-text"></p>
 
       <div class="summary-row">
         <div>
-          <p class="summary-label">Last workout</p>
-          <p id="workout-last" class="summary-value">—</p>
-        </div>
-        <div>
-          <p class="summary-label">Recent focus</p>
-          <p id="workout-focus" class="summary-value">—</p>
+          <p class="summary-label">Saved workout days</p>
+          <p id="workout-count" class="summary-value">0</p>
         </div>
       </div>
 
-      <ul id="workout-history" class="history-list"></ul>
+      <div id="workout-history" class="history-list"></div>
     </div>
   </div>
 
